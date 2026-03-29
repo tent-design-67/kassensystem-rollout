@@ -351,6 +351,8 @@
   }
 
 
+  .video-row { padding: 0.1rem 1.1rem 0.6rem 3rem; position: relative; z-index: 10; }
+  .video-row a { pointer-events: all !important; cursor: pointer !important; }
   .video-wrap-link {
     margin: 0.5rem 1.1rem 0.75rem;
   }
@@ -709,13 +711,16 @@ const taskDefs = [
   { section: 'Schritt 2 – Bondrucker einrichten' },
   { id: 'bt', text: 'Bluetooth am iPad aktivieren', hint: '' },
   { id: 'pair', text: 'Drucker einschalten → im iPad koppeln', hint: '📺 3-Min-Video (Bluetooth-Drucker)', hintClass: 'video', link: 'https://www.youtube.com/watch?app=desktop&v=lOD9Q11z_sE&list=PL_i6ZFZucFD8yIXTbYmfCzKZvp0dp0ei1&index=4', linkLabel: '▶ Video öffnen' },
-  { section: 'Test 1 – Shopify POS App' },
+
+  { section: 'Test – Shopify POS App' },
   { id: 'test1a', text: 'Shopify POS App öffnen → Einstellungen → Drucker', hint: '→ Neuer Drucker erscheint neben dem bisherigen Standarddrucker' },
   { id: 'test1b', text: 'Neuen Drucker antippen → ein Menü weiter gehen', hint: '' },
   { id: 'test1c', text: '„Testbon drucken" auswählen → Bon kommt raus ✅', hint: '' },
 
-  { section: 'Test 2 – Tillhub App' },
-  { id: 'test2a', text: 'Anweisung folgt', hint: '⏳ Wird noch ergänzt', hintClass: '' },
+  { section: 'Schritt 3 – Drucker in Tillhub hinzufügen' },
+  { id: 'drucker1', text: 'Tillhub App öffnen → Einstellungen → Drucker', hint: '', driveVideo: 'https://drive.google.com/file/d/1N_JcZynG0jcjsqMThVAEaWRzH6pLLS2U/view', driveVideoLabel: '▶ Video öffnen' },
+  { id: 'drucker2', text: 'Drucker hinzufügen → verbundenen Drucker auswählen', hint: '' },
+  { id: 'drucker3', text: 'Speichern → Drucker erscheint in der Liste ✅', hint: '' },
 ];
 
 const grid = document.getElementById('stores-grid');
@@ -746,6 +751,7 @@ stores.forEach((store, si) => {
           </div>
         </div>
         ${t.localVideo ? `<div class="video-row" onclick="event.stopPropagation()"><a class="task-link" href="https://drive.google.com/file/d/1eEm5e-hFvP4tO72viWzE1j0r7sJ7hLU6/view" target="_blank">▶ Video öffnen</a></div>` : ''}
+        ${t.driveVideo ? `<div class="video-row" onclick="event.stopPropagation()"><a class="task-link" href="${t.driveVideo}" target="_blank">${t.driveVideoLabel}</a></div>` : ''}
         `;
     }
   });
@@ -821,10 +827,12 @@ function syncToSheets(taskId, taskText, done) {
     done: done ? '1' : '0'
   });
   const url = WEBHOOK_URL + '?' + params.toString();
-  // Use no-cors GET - Apps Script handles this without CORS issues
-  fetch(url, { method: 'GET', mode: 'no-cors' })
-    .then(() => showSync('ok'))
-    .catch(() => showSync('err'));
+  // Image ping bypasses CORS entirely - no response needed
+  const img = new Image();
+  img.onload = img.onerror = () => showSync('ok');
+  img.src = url;
+  // Fallback timeout
+  setTimeout(() => showSync('ok'), 2000);
 }
 
 function showSync(state) {
