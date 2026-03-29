@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actionplan – Neue Kasse live!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --card: #222222;
+    --border: #2e2e2e;
+    --accent: #f0e14a;
+    --accent2: #4af0b0;
+    --accent3: #f07a4a;
+    --text: #f0ede6;
+    --muted: #888;
+    --done-bg: #1a2a1f;
+    --done-border: #2e5e3e;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    max-width: 860px;
+    margin: 0 auto 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #1e1a00;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    margin-top: 0.75rem;
+    width: fit-content;
+  }
+
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem; }
+
+  /* DAY BLOCK */
+  .day-block {}
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .day-tag {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .day-tag.mo { background: #1e1a00; color: var(--accent); border: 1px solid var(--accent); }
+  .day-tag.di { background: #001e18; color: var(--accent2); border: 1px solid var(--accent2); }
+  .day-tag.mi { background: #1e1000; color: var(--accent3); border: 1px solid var(--accent3); }
+
+  .day-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .day-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* STORE GRID */
+  .stores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1rem;
+  }
+
+  .store-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .store-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.1rem;
+    background: #272727;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .store-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .store-icon {
+    font-size: 1rem;
+  }
+
+  .tasks { padding: 0.75rem 0; }
+
+  .task {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+    margin: 0 0.25rem;
+  }
+  .task:hover { background: #2a2a2a; }
+  .task.done { opacity: 0.5; }
+  .task.done .task-text { text-decoration: line-through; color: var(--muted); }
+
+  .checkbox {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  .task.done .checkbox {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+  .checkbox svg { display: none; }
+  .task.done .checkbox svg { display: block; }
+
+  .task-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .task-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    margin-top: 0.15rem;
+    display: block;
+  }
+  .task-hint.video { color: #a0c4ff; }
+  .task-link {
+    display: inline-block;
+    margin-top: 0.3rem;
+    font-family: "DM Mono", monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent);
+    transition: opacity 0.15s;
+  }
+  .task-link:hover { opacity: 0.7; }
+
+  .no-store-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 2rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    display: none;
+  }
+  .no-store-hint.visible { display: block; }
+  #stores-grid { display: none; }
+  #stores-grid.visible { display: grid; }
+  .tbd-card { display: none; }
+  .tbd-card.visible { display: block; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.6rem 1.1rem 0.25rem;
+  }
+
+  /* PASSWORDS BLOCK */
+  .pw-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .pw-block h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .pw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+  }
+  .pw-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+  }
+  .pw-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .pw-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--accent);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pw-empty {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* TBD BLOCK */
+  .tbd-card {
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  .tbd-card .tbd-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+  .tbd-card p { font-size: 0.9rem; }
+
+  /* MILESTONE */
+  .milestone {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #1a0e00;
+    border: 1px solid var(--accent3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+  }
+  .milestone .mi-icon { font-size: 1.5rem; }
+  .milestone .mi-text { font-size: 0.9rem; color: var(--accent3); }
+  .milestone .mi-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.05rem; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+  .progress-label { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .progress-pct { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--accent2); }
+  .bar { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent2); border-radius: 999px; width: 0%; transition: width 0.4s ease; }
+
+  /* VIDEO EMBEDS */
+  .video-wrap {
+    margin: 0.5rem 1.1rem 0.75rem;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+  }
+  .video-wrap iframe,
+  .video-wrap video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border: none;
+  }
+  .video-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.75rem;
+    background: #1a1a1a;
+    border-top: 1px solid var(--border);
+  }
+
+
+  .video-wrap-link {
+    margin: 0.5rem 1.1rem 0.75rem;
+  }
+  .video-open-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #1a0e00;
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .video-open-btn:hover { background: #2a1800; }
+
+
+  /* SYNC INDICATOR */
+  #sync-status {
+    position: fixed;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 100;
+    pointer-events: none;
+  }
+  #sync-status.show { opacity: 1; }
+  #sync-status.ok   { border-color: var(--accent2); color: var(--accent2); }
+  #sync-status.err  { border-color: #f04a4a; color: #f04a4a; }
+
+  /* STORE SELECTOR */
+  #store-selector-wrap {
+    max-width: 860px;
+    margin: -1.5rem auto 1.5rem;
+  }
+  #store-selector {
+    background: var(--card);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 0.06em;
+  }
+  #store-selector option { background: var(--card); color: var(--text); }
+
+  /* PIN SCREEN */
+  #pin-screen {
+    position: fixed;
+    inset: 0;
+    background: #0f0f0f;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+  }
+  #pin-screen.hidden { display: none; }
+
+  .pin-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .pin-logo span { color: var(--accent); }
+
+  .pin-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: -1.5rem;
+  }
+
+  .pin-dots {
+    display: flex;
+    gap: 1rem;
+  }
+  .pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .pin-dot.error {
+    background: #f04a4a;
+    border-color: #f04a4a;
+  }
+
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 260px;
+  }
+  .pin-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 1rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .pin-btn:active { background: #333; transform: scale(0.95); }
+  .pin-btn.del {
+    font-size: 1rem;
+    color: var(--muted);
+  }
+  .pin-btn.zero { grid-column: 2; }
+
+  .pin-error-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: #f04a4a;
+    letter-spacing: 0.05em;
+    min-height: 1rem;
+    text-align: center;
+  }
+
+</style>
+<script>
+// PIN PROTECTION
+const CORRECT_PIN = '2503';
+let pinEntry = '';
+
+function pinPress(digit) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updateDots();
+  if (pinEntry.length === 4) {
+    setTimeout(checkPin, 150);
+  }
+}
+
+function pinDel() {
+  pinEntry = pinEntry.slice(0, -1);
+  updateDots();
+  document.getElementById('pin-error').textContent = '';
+  document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+}
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('d' + i);
+    dot.classList.toggle('filled', i < pinEntry.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    document.getElementById('pin-screen').classList.add('hidden');
+  } else {
+    document.querySelectorAll('.pin-dot').forEach(d => {
+      d.classList.remove('filled');
+      d.classList.add('error');
+    });
+    document.getElementById('pin-error').textContent = 'Falscher PIN – bitte nochmal';
+    pinEntry = '';
+    setTimeout(() => {
+      document.querySelectorAll('.pin-dot').forEach(d => d.classList.remove('error'));
+    }, 800);
+  }
+}
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('pin-screen').classList.contains('hidden')) return;
+  if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+  if (e.key === 'Backspace') pinDel();
+});
+</script>
+</head>
+<body>
+<div id="sync-status"></div>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <div>
+    <div class="pin-logo">Neue Kassen –<br><span>Mittwoch live!</span></div>
+  </div>
+  <p class="pin-subtitle">Bitte PIN eingeben</p>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-error-msg" id="pin-error"></div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+    <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+  </div>
+</div>
+
+
+<header>
+  <div class="eyebrow">Rollout-Plan · Kassensystem</div>
+  <h1>Neue Kassen –<br><span>Mittwoch live!</span></h1>
+  <p class="subtitle">4 Filialen · Montag &amp; Dienstag · Alle Aufgaben im Überblick</p>
+  <div class="badge"><span class="dot"></span> Rollout läuft</div>
+</header>
+
+<main>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrap">
+    <div class="progress-header">
+      <span class="progress-label">Gesamtfortschritt</span>
+      <span class="progress-pct" id="pct">0 %</span>
+    </div>
+    <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+  </div>
+
+  <!-- STORE SELECTOR -->
+  <div id="store-selector-wrap">
+    <label style="font-family:'DM Mono',monospace; font-size:0.65rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-right:0.75rem;">Meine Filiale:</label>
+    <select id="store-selector" onchange="onStoreChange(this.value)">
+      <option value="">– bitte wählen –</option>
+      <option value="Fhain">Fhain</option>
+      <option value="Spandau">Spandau</option>
+      <option value="Eiche">Eiche</option>
+      <option value="ThePlayce">ThePlayce</option>
+    </select>
+  </div>
+
+  <!-- RESET -->
+  <div style="display:flex; justify-content:flex-end;">
+    <button onclick="resetAll()" style="background:transparent; border:1px solid var(--border); color:var(--muted); font-family:'DM Mono',monospace; font-size:0.68rem; padding:0.4rem 0.9rem; border-radius:6px; cursor:pointer; letter-spacing:0.06em; transition:all 0.15s;" onmouseover="this.style.borderColor='#f04a4a';this.style.color='#f04a4a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↺ Checkliste zurücksetzen</button>
+  </div>
+
+  <!-- PASSWÖRTER -->
+  <div class="pw-block">
+    <h3>🔑 Passwörter sammeln – vor dem Start!</h3>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem;">Für jede Filiale braucht ihr folgende Zugänge. Bitte <strong style="color:var(--text)">vor Montag</strong> zusammentragen!</p><p style="font-size:0.82rem; color:var(--accent3); margin-bottom:1rem;">⚠️ Tragt die Passwörter <strong style="color:var(--text)">nicht hier ein</strong> – schreibt sie auf einen Zettel, den ihr beim Setup dabei habt.</p>
+    <div class="pw-grid">
+      <div class="pw-item">
+        <div class="pw-label">WLAN</div>
+        <span class="pw-value pw-empty">&nbsp;</span>
+      </div>
+      <div class="pw-item">
+        <div class="pw-label">App Store</div>
+        <span class="pw-value pw-empty">&nbsp;</span>
+      </div>
+      <div class="pw-item">
+        <div class="pw-label">Apple ID</div>
+        <span class="pw-value pw-empty">&nbsp;</span>
+      </div>
+      <div class="pw-item">
+        <div class="pw-label">Tillhub Login</div>
+        <span class="pw-value pw-empty">&nbsp;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTAG -->
+  <div class="day-block">
+    <div class="day-header">
+      <div class="day-tag mo">Montag</div>
+      <div class="day-title">App einrichten &amp; Drucker verbinden</div>
+      <div class="day-line"></div>
+    </div>
+
+    <div id="no-store-hint-mo" class="no-store-hint">👆 Bitte zuerst oben deine Filiale auswählen</div>
+    <div class="stores-grid" id="stores-grid">
+      <!-- generated by JS -->
+    </div>
+  </div>
+
+  <!-- DIENSTAG -->
+  <div class="day-block">
+    <div class="day-header">
+      <div class="day-tag di">Dienstag</div>
+      <div class="day-title">Folgt noch</div>
+      <div class="day-line"></div>
+    </div>
+    <div id="no-store-hint-di" class="no-store-hint">👆 Bitte zuerst oben deine Filiale auswählen</div>
+    <div class="tbd-card">
+      <div class="tbd-icon">📋</div>
+      <p>Die Aufgaben für Dienstag werden noch ergänzt.</p>
+    </div>
+  </div>
+
+  <!-- MITTWOCH MILESTONE -->
+  <div class="milestone">
+    <div class="mi-icon">🚀</div>
+    <div>
+      <div class="mi-title">Mittwoch: Ladenöffnung mit neuen Kassen!</div>
+      <div class="mi-text">Ziel erreicht – alle 4 Filialen sind live.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const stores = [
+  { name: 'Fhain', icon: '🏪' },
+  { name: 'Spandau', icon: '🏪' },
+  { name: 'Eiche', icon: '🏪' },
+  { name: 'ThePlayce', icon: '🏪' },
+];
+
+const taskDefs = [
+  { section: 'Vorbereitung' },
+  { id: 'pw', text: 'Alle Passwörter griffbereit?', hint: '⚠️ WLAN, App Store, Apple ID, Tillhub', hintClass: '' },
+
+  { section: 'Schritt 1 – App installieren' },
+  { id: 'dl', text: 'App Store öffnen → „Tillhub" installieren', hint: '', link: 'https://apps.apple.com/de/app/tillhub/id1353390853', linkLabel: '→ Direkt zum App Store' },
+  { id: 'login', text: 'App öffnen → Einloggen → eigene Filiale auswählen', hint: '📺 Kurzes Erklärvideo', hintClass: 'video', localVideo: './tillhub_initialer_login_mit_filiale_und_kasse.mp4' },
+
+  { section: 'Schritt 2 – Bondrucker einrichten' },
+  { id: 'bt', text: 'Bluetooth am iPad aktivieren', hint: '' },
+  { id: 'pair', text: 'Drucker einschalten → im iPad koppeln', hint: '📺 3-Min-Video (Bluetooth-Drucker)', hintClass: 'video', link: 'https://www.youtube.com/watch?app=desktop&v=lOD9Q11z_sE&list=PL_i6ZFZucFD8yIXTbYmfCzKZvp0dp0ei1&index=4', linkLabel: '▶ Video öffnen' },
+  { section: 'Test 1 – Shopify POS App' },
+  { id: 'test1a', text: 'Shopify POS App öffnen → Einstellungen → Drucker', hint: '→ Neuer Drucker erscheint neben dem bisherigen Standarddrucker' },
+  { id: 'test1b', text: 'Neuen Drucker antippen → ein Menü weiter gehen', hint: '' },
+  { id: 'test1c', text: '„Testbon drucken" auswählen → Bon kommt raus ✅', hint: '' },
+
+  { section: 'Test 2 – Tillhub App' },
+  { id: 'test2a', text: 'Anweisung folgt', hint: '⏳ Wird noch ergänzt', hintClass: '' },
+];
+
+const grid = document.getElementById('stores-grid');
+
+stores.forEach((store, si) => {
+  const card = document.createElement('div');
+  card.className = 'store-card';
+
+  let html = `<div class="store-head"><span class="store-name">${store.icon} ${store.name}</span></div><div class="tasks">`;
+  card.dataset.store = store.name;
+
+  taskDefs.forEach((t, ti) => {
+    if (t.section) {
+      html += `<div class="section-label">${t.section}</div>`;
+    } else {
+      const taskId = `task-${si}-${t.id}`;
+      html += `
+        <div class="task" id="${taskId}" onclick="toggleTask('${taskId}')">
+          <div class="checkbox">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="task-text">${t.text}</div>
+            ${t.hint ? `<span class="task-hint ${t.hintClass || ''}">${t.hint}</span>` : ''}
+            ${t.link ? `<a class="task-link" href="${t.link}" target="_blank" onclick="event.stopPropagation()">${t.linkLabel}</a>` : ''}
+          </div>
+        </div>
+        ${t.localVideo ? `<div class="video-row" onclick="event.stopPropagation()"><a class="task-link" href="https://drive.google.com/file/d/1eEm5e-hFvP4tO72viWzE1j0r7sJ7hLU6/view" target="_blank">▶ Video öffnen</a></div>` : ''}
+        `;
+    }
+  });
+
+  html += '</div>';
+  card.innerHTML = html;
+  grid.appendChild(card);
+});
+
+// ── CONFIG ──────────────────────────────────────────────────
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxBE05ywDOe5UulCiGfO3CemAw1n-_kTLkh3vSnBj70yId1bkrOpeOxfD_PVLX1e9bgMA/exec';
+// ────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'rollout_tasks_v1';
+const STORE_KEY   = 'rollout_store_v1';
+
+let currentStore = '';
+
+function onStoreChange(val) {
+  currentStore = val;
+  try { localStorage.setItem(STORE_KEY, val); } catch(e) {}
+  applyStoreVisibility();
+  loadState();
+  updateProgress();
+}
+
+function applyStoreVisibility() {
+  const hasStore = !!currentStore;
+  // Monday grid
+  document.getElementById('stores-grid').classList.toggle('visible', hasStore);
+  document.getElementById('no-store-hint-mo').classList.toggle('visible', !hasStore);
+  // Tuesday
+  const tbd = document.querySelector('.tbd-card');
+  if (tbd) tbd.classList.toggle('visible', hasStore);
+  const hintDi = document.getElementById('no-store-hint-di');
+  if (hintDi) hintDi.classList.toggle('visible', !hasStore);
+  // Filter store cards
+  document.querySelectorAll('#stores-grid .store-card').forEach(card => {
+    card.style.display = (!currentStore || card.dataset.store === currentStore) ? '' : 'none';
+  });
+}
+
+function saveState() {
+  const state = {};
+  document.querySelectorAll('#stores-grid .task').forEach(el => {
+    state[el.id] = el.classList.contains('done');
+  });
+  try { localStorage.setItem(STORAGE_KEY + '_' + currentStore, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  // Reset all
+  document.querySelectorAll('#stores-grid .task').forEach(el => el.classList.remove('done'));
+  if (!currentStore) return;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    Object.entries(state).forEach(([id, done]) => {
+      const el = document.getElementById(id);
+      if (el && done) el.classList.add('done');
+    });
+  } catch(e) {}
+}
+
+function syncToSheets(taskId, taskText, done) {
+  if (!currentStore || !WEBHOOK_URL || WEBHOOK_URL.includes('DEINE')) return;
+  showSync('syncing');
+  const params = new URLSearchParams({
+    store: currentStore,
+    taskId: taskId,
+    taskText: taskText,
+    done: done ? '1' : '0'
+  });
+  const url = WEBHOOK_URL + '?' + params.toString();
+  // Use no-cors GET - Apps Script handles this without CORS issues
+  fetch(url, { method: 'GET', mode: 'no-cors' })
+    .then(() => showSync('ok'))
+    .catch(() => showSync('err'));
+}
+
+function showSync(state) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (state === 'syncing') { el.textContent = '⟳ wird gespeichert…'; el.className = 'show'; }
+  if (state === 'ok')      { el.textContent = '✓ gespeichert';        el.className = 'show ok'; }
+  if (state === 'err')     { el.textContent = '✗ Sync fehlgeschlagen'; el.className = 'show err'; }
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 2500);
+}
+
+function toggleTask(id) {
+  if (!currentStore) {
+    alert('Bitte zuerst deine Filiale auswählen!');
+    return;
+  }
+  const el = document.getElementById(id);
+  el.classList.toggle('done');
+  const taskText = el.querySelector('.task-text')?.textContent || id;
+  saveState();
+  syncToSheets(id, taskText, el.classList.contains('done'));
+  updateProgress();
+}
+
+function updateProgress() {
+  const selector = currentStore
+    ? `#stores-grid .store-card[data-store="${currentStore}"] .task`
+    : '#stores-grid .task';
+  const all  = document.querySelectorAll(selector).length;
+  const done = document.querySelectorAll(selector + '.done').length;
+  const pct  = all > 0 ? Math.round((done / all) * 100) : 0;
+  document.getElementById('pct').textContent = pct + ' %';
+  document.getElementById('bar-fill').style.width = pct + '%';
+}
+
+function resetAll() {
+  if (!confirm('Alle Häkchen zurücksetzen?')) return;
+  document.querySelectorAll('#stores-grid .task').forEach(el => el.classList.remove('done'));
+  try { localStorage.removeItem(STORAGE_KEY + '_' + currentStore); } catch(e) {}
+  updateProgress();
+}
+
+// Restore saved store selection
+try {
+  const saved = localStorage.getItem(STORE_KEY);
+  if (saved) {
+    currentStore = saved;
+    const sel = document.getElementById('store-selector');
+    if (sel) sel.value = saved;
+    // Apply visibility
+    applyStoreVisibility();
+  }
+} catch(e) {}
+
+// Apply initial visibility
+applyStoreVisibility();
+// Load saved state after tasks are rendered
+loadState();
+updateProgress();
+
+
+
+</script>
+</body>
+</html>
