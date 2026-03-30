@@ -767,7 +767,7 @@ stores.forEach((store, si) => {
 });
 
 // ── CONFIG ──────────────────────────────────────────────────
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxBE05ywDOe5UulCiGfO3CemAw1n-_kTLkh3vSnBj70yId1bkrOpeOxfD_PVLX1e9bgMA/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwxr8RoaFWamK4sG8AkrjsKR0xOb6DtpBLkCVI2VS4uVOkWINwuYekzjrV3U6VynRuevg/exec';
 // ────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'rollout_tasks_v1';
@@ -805,21 +805,54 @@ function saveState() {
     state[el.id] = el.classList.contains('done');
   });
   try { localStorage.setItem(STORAGE_KEY + '_' + currentStore, JSON.stringify(state)); } catch(e) {}
+  // Update local cache
+  sheetState[currentStore] = state;
+}
+
+// Global sheet state cache (all stores)
+let sheetState = {};
+
+function applyState(storeFilter) {
+  // Reset all tasks
+  document.querySelectorAll('#stores-grid .task').forEach(el => el.classList.remove('done'));
+  if (!storeFilter) return;
+  // Apply sheet state for selected store
+  const storeTasks = sheetState[storeFilter] || {};
+  Object.entries(storeTasks).forEach(([taskId, done]) => {
+    const el = document.getElementById(taskId);
+    if (el && done) el.classList.add('done');
+  });
 }
 
 function loadState() {
-  // Reset all
-  document.querySelectorAll('#stores-grid .task').forEach(el => el.classList.remove('done'));
-  if (!currentStore) return;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    Object.entries(state).forEach(([id, done]) => {
-      const el = document.getElementById(id);
-      if (el && done) el.classList.add('done');
+  applyState(currentStore);
+  updateProgress();
+}
+
+function loadFromSheet() {
+  if (!WEBHOOK_URL || WEBHOOK_URL.includes('DEINE')) return;
+  fetch(WEBHOOK_URL + '?action=load')
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        sheetState = data.state || {};
+        // Merge into localStorage for offline fallback
+        Object.entries(sheetState).forEach(([store, tasks]) => {
+          try { localStorage.setItem(STORAGE_KEY + '_' + store, JSON.stringify(tasks)); } catch(e) {}
+        });
+        applyState(currentStore);
+        updateProgress();
+      }
+    })
+    .catch(() => {
+      // Offline fallback: use localStorage
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
+        if (raw) sheetState[currentStore] = JSON.parse(raw);
+      } catch(e) {}
+      applyState(currentStore);
+      updateProgress();
     });
-  } catch(e) {}
 }
 
 function syncToSheets(taskId, taskText, done) {
@@ -895,9 +928,10 @@ try {
 
 // Apply initial visibility
 applyStoreVisibility();
-// Load saved state after tasks are rendered
-loadState();
-updateProgress();
+// Load from sheet (falls back to localStorage if offline)
+loadFromSheet();
+// Auto-refresh every 30 seconds
+setInterval(() => { loadFromSheet(); }, 1800000);
 
 
 
