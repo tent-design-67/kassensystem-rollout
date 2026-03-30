@@ -643,7 +643,7 @@ document.addEventListener('keydown', (e) => {
         <span class="pw-value pw-empty">&nbsp;</span>
       </div>
       <div class="pw-item">
-        <div class="pw-label">Apple ID</div>
+        <div class="pw-label">Tablet Daten</div>
         <span class="pw-value pw-empty">&nbsp;</span>
       </div>
       <div class="pw-item">
@@ -703,6 +703,11 @@ const stores = [
 const taskDefs = [
   { section: 'Vorbereitung' },
   { id: 'pw', text: 'Alle Passwörter griffbereit?', hint: '⚠️ WLAN, App Store, Apple ID, Tillhub', hintClass: '' },
+
+  { section: 'Schritt 0 – Apple iOS aktualisieren' },
+  { id: 'ios1', text: 'Einstellungen → Allgemein → Softwareupdate öffnen', hint: '' },
+  { id: 'ios2', text: 'Update herunterladen & installieren', hint: '⏱ Dauer ca. 10 Min – iPad startet neu' },
+  { id: 'ios3', text: 'iPad neu gestartet & bereit ✅', hint: '' },
 
   { section: 'Schritt 1 – App installieren' },
   { id: 'dl', text: 'App Store öffnen → „Tillhub" installieren', hint: '', link: 'https://apps.apple.com/de/app/tillhub/id1353390853', linkLabel: '→ Direkt zum App Store' },
