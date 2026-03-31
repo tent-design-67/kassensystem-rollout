@@ -794,7 +794,7 @@ if (gridDi) {
       if (t.section) {
         html += `<div class="section-label">${t.section}</div>`;
       } else {
-        const taskId = `di-task-${si}-${t.id}`;
+        const taskId = `task-di-${si}-${t.id}`;
         html += `
           <div class="task" id="${taskId}" onclick="toggleTask('${taskId}')">
             <div class="checkbox">
@@ -851,7 +851,7 @@ function applyStoreVisibility() {
 
 function saveState() {
   const state = {};
-  document.querySelectorAll('#stores-grid .task').forEach(el => {
+  document.querySelectorAll('#stores-grid .task, #stores-grid-di .task').forEach(el => {
     state[el.id] = el.classList.contains('done');
   });
   try { localStorage.setItem(STORAGE_KEY + '_' + currentStore, JSON.stringify(state)); } catch(e) {}
@@ -863,8 +863,8 @@ function saveState() {
 let sheetState = {};
 
 function applyState(storeFilter) {
-  // Reset all tasks
-  document.querySelectorAll('#stores-grid .task').forEach(el => el.classList.remove('done'));
+  // Reset all tasks in both grids
+  document.querySelectorAll('#stores-grid .task, #stores-grid-di .task').forEach(el => el.classList.remove('done'));
   if (!storeFilter) return;
   // Apply sheet state for selected store
   const storeTasks = sheetState[storeFilter] || {};
