@@ -817,7 +817,7 @@ if (gridDi) {
 }
 
 // ── CONFIG ──────────────────────────────────────────────────
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwxr8RoaFWamK4sG8AkrjsKR0xOb6DtpBLkCVI2VS4uVOkWINwuYekzjrV3U6VynRuevg/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwEUFyXDZ-4rllR8DmpmgjU_Xcgb5nNg3gSQabxo_j-ilVMHBSrVY4ykIxrf20ebBW3/exec';
 // ────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'rollout_tasks_v1';
@@ -879,31 +879,7 @@ function loadState() {
   updateProgress();
 }
 
-function loadFromSheet() {
-  if (!WEBHOOK_URL || WEBHOOK_URL.includes('DEINE')) return;
-  fetch(WEBHOOK_URL + '?action=load')
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'ok') {
-        sheetState = data.state || {};
-        // Merge into localStorage for offline fallback
-        Object.entries(sheetState).forEach(([store, tasks]) => {
-          try { localStorage.setItem(STORAGE_KEY + '_' + store, JSON.stringify(tasks)); } catch(e) {}
-        });
-        applyState(currentStore);
-        updateProgress();
-      }
-    })
-    .catch(() => {
-      // Offline fallback: use localStorage
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
-        if (raw) sheetState[currentStore] = JSON.parse(raw);
-      } catch(e) {}
-      applyState(currentStore);
-      updateProgress();
-    });
-}
+
 
 function syncToSheets(taskId, taskText, done) {
   if (!currentStore || !WEBHOOK_URL || WEBHOOK_URL.includes('DEINE')) return;
@@ -915,12 +891,34 @@ function syncToSheets(taskId, taskText, done) {
     done: done ? '1' : '0'
   });
   const url = WEBHOOK_URL + '?' + params.toString();
-  // Image ping bypasses CORS entirely - no response needed
-  const img = new Image();
-  img.onload = img.onerror = () => showSync('ok');
-  img.src = url;
-  // Fallback timeout
-  setTimeout(() => showSync('ok'), 2000);
+  // fetch with no-cors writes to sheet reliably from GitHub Pages
+  // We show 'ok' after 1.5s since no-cors never returns a readable response
+  fetch(url, { mode: 'no-cors' })
+    .then(() => setTimeout(() => showSync('ok'), 300))
+    .catch(() => showSync('err'));
+}
+
+function loadFromSheet() {
+  if (!WEBHOOK_URL || WEBHOOK_URL.includes('DEINE')) return;
+  fetch(WEBHOOK_URL + '?action=load', { mode: 'no-cors' })
+    .then(r => {
+      // no-cors returns opaque response - can't read body
+      // Fall back to localStorage only
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
+        if (raw) sheetState[currentStore] = JSON.parse(raw);
+      } catch(e) {}
+      applyState(currentStore);
+      updateProgress();
+    })
+    .catch(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY + '_' + currentStore);
+        if (raw) sheetState[currentStore] = JSON.parse(raw);
+      } catch(e) {}
+      applyState(currentStore);
+      updateProgress();
+    });
 }
 
 function showSync(state) {
